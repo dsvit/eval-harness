@@ -1,0 +1,9 @@
+# Abhaengigkeiten dieses Projekts.
+# Installieren:  pip install -r requirements.txt
+#
+# Stand jetzt: keine. Dataset, Validator und Vergleichsskript kommen mit der
+# Python-Standardbibliothek aus (json, re, sys, collections, pathlib).
+# Das ist Absicht -- jede Abhaengigkeit ist etwas, das kaputtgehen kann.
+#
+# Kommt mit dem Runner dazu:
+# anthropic==0.40.0

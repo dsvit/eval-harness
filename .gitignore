@@ -1,0 +1,23 @@
+# --- Secrets: niemals committen ---
+# .env enthaelt den API-Key. Wenn er einmal in der Historie steht, bekommt man
+# ihn praktisch nicht mehr raus -- man muss ihn dann beim Anbieter widerrufen.
+.env
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# --- Laufergebnisse ---
+# Rohantworten des Modells. Werden vom Runner erzeugt und sind reproduzierbar,
+# gehoeren also nicht in die Versionierung. Aggregierte Reports schon.
+runs/
+.cache/
+
+# --- macOS / Editoren ---
+.DS_Store
+.vscode/
+.idea/
