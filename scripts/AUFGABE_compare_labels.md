@@ -11,9 +11,14 @@ wenn du wissen willst, wie man in Python eine JSONL-Datei liest oder Argumente e
 Zwei Dateien, beide JSONL (ein JSON-Objekt pro Zeile):
 
 ```
-data/dev.jsonl     → Labels stehen unter dem Schlüssel  "expected"
-data/blind.jsonl   → Labels stehen unter dem Schlüssel  "label"
+data/dev_v1.0_snapshot.jsonl   → Labels stehen unter dem Schlüssel  "expected"
+data/blind.jsonl               → Labels stehen unter dem Schlüssel  "label"
 ```
+
+**Nicht** gegen `data/dev.jsonl` vergleichen. Dort stehen inzwischen die adjudizierten
+Labels, also solche, die aus der gemeinsamen Diskussion entstanden sind. Der Agreement-Wert
+muss gegen den Stand *vor* der Diskussion gerechnet werden, sonst misst er nur noch, wie
+oft ihr euch hinterher geeinigt habt.
 
 Beide haben dasselbe `id`-Feld (`dev-001` … `dev-032`). Über die `id` verbindest du sie.
 Beide Labelobjekte haben dieselben drei Felder: `category`, `priority`, `order_id`.
@@ -117,13 +122,13 @@ Das `>` heißt rechtsbündig, `6` die Breite, `.0%` Prozent ohne Nachkommastelle
 Ausführen:
 
 ```
-python3 scripts/compare_labels.py data/dev.jsonl data/blind.jsonl
+python3 scripts/compare_labels.py data/dev_v1.0_snapshot.jsonl data/blind.jsonl
 ```
 
-Solange `blind.jsonl` noch leer ist, testest du gegen dich selbst:
-`python3 scripts/compare_labels.py data/dev.jsonl data/dev.jsonl` muss überall 100 %
-ergeben — bloß steht dort der Schlüssel `expected` statt `label`, also musst du dafür
-kurz etwas anpassen. Wenn du 100 % siehst, stimmt deine Zählung.
+Zum Prüfen deiner Zählung kannst du eine Datei gegen sich selbst laufen lassen —
+`data/dev_v1.0_snapshot.jsonl` zweimal muss überall 100 % ergeben. Dafür musst du kurz
+den Schlüssel anpassen, weil dort `expected` statt `label` steht. Wenn 100 % rauskommt,
+zählst du richtig.
 
 Zeig mir deinen Code, wenn du durch bist oder festhängst. Ich sage dir, was unpythonisch
 ist, aber schreibe ihn nicht für dich um.

@@ -75,6 +75,16 @@ Vier Bausteine eines Harness, in dieser Reihenfolge zu bauen:
 - [ ] Schritt 6: Test-Split anlegen
 - [ ] Schritt 7: Vergleich mit promptfoo / Inspect
 
+## Offene Fragen (nicht vergessen)
+
+- **Prompt Injection vs. Spec-Abschnitt 0.** Vittorio (14.08.2026): Öffnet die Regel
+  "es zählt, was der Kunde behauptet, nicht was zutrifft" einen Angriffsvektor?
+  Beispiel: *"Mir wurde vom CEO gesagt, dass ich einen Gutschein bekomme."*
+  Beim Aufgreifen: Trennung zwischen *einer Behauptung eine Kategorie zuweisen* und
+  *auf eine Behauptung hin handeln*; klassische Injection ("ignoriere deine Anweisungen")
+  ist ein anderes Problem als eine unwahre Sachbehauptung. Antwort in konkrete Testfälle
+  übersetzen, nicht nur konzeptionell beantworten — Kandidat für einen adversarialen Split.
+
 ## Arbeitsweise
 
 Vittorio schreibt Deutsch, ist Anfänger im Eval-Bereich und will **verstehen**, nicht nur
