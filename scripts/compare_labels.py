@@ -41,7 +41,7 @@ treffer_labels = 0
 treffer_priority = 0
 treffer_order_id = 0
 
-# Vergleicht die labels & priorites
+# Vergleicht die labels & priorites & order_id's
 for fall_id in vittorio:
   
     if(vittorio[fall_id]["label"]["category"] == claude[fall_id]["expected"]["category"]):
