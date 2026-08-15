@@ -39,6 +39,7 @@ print(f"Anzahl an Fällen in (vittorio, claude): ({len(vittorio)}, {len(claude)}
 # Dieser zählt wie oft meine labels & priorities mit denen von Claude gleich sind
 treffer_labels = 0
 treffer_priority = 0
+treffer_order_id = 0
 
 # Vergleicht die labels & priorites
 for fall_id in vittorio:
@@ -49,6 +50,10 @@ for fall_id in vittorio:
     if(vittorio[fall_id]["label"]["priority"] == claude[fall_id]["expected"]["priority"]):
         treffer_priority +=1
         
+    if(vittorio[fall_id]["label"]["order_id"] == claude[fall_id]["expected"]["order_id"]):
+          treffer_order_id +=1
+        
 # Ausgabe des Ergebnis
 print(f"Treffer der labels: {treffer_labels}")
 print(f"Treffer der priorities: {treffer_priority}")
+print(f"Treffer der order_id's: {treffer_order_id}")
