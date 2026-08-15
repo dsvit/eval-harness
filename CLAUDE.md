@@ -66,9 +66,15 @@ Vier Bausteine eines Harness, in dieser Reihenfolge zu bauen:
       32 Fälle unabhängig gelabelt, 7 Abweichungen, davon 6 auf 3 Spec-Defekte
       zurückführbar. `order_id` 32/32 identisch. Spec daraufhin auf 1.1 gehoben,
       danach 4 Labels adjudiziert. Vorzustand: `data/dev_v1.0_snapshot.jsonl`
-- [ ] Schritt 2b: `scripts/compare_labels.py` — schreibt Vittorio selbst
+- [~] Schritt 2b: `scripts/compare_labels.py` — schreibt Vittorio selbst
       (Aufgabe in `scripts/AUFGABE_compare_labels.md`). Vergleich gegen
-      `dev_v1.0_snapshot.jsonl`, nicht gegen `dev.jsonl`
+      `dev_v1.0_snapshot.jsonl`, nicht gegen `dev.jsonl`.
+      **Stand:** beide Dateien werden als Dict mit `id` als Schlüssel eingelesen,
+      Übereinstimmung bei `category` (30/32) und `priority` (27/32) wird gezählt.
+      **Offen:** `order_id`, Prozentangaben, Liste der strittigen Fälle,
+      optional Cohens Kappa. Danach: die drei fast gleichen Blöcke in eine
+      Funktion ziehen — die Dopplung ist bewusst stehengelassen worden.
+      **Repo:** github.com/dsvit/eval-harness
 - [ ] Schritt 3: Runner ← **nächster Schritt**
 - [ ] Schritt 4: Grader + Metriken
 - [ ] Schritt 5: Report + Fehleranalyse
