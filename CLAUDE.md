@@ -23,14 +23,21 @@ Repo: github.com/dsvit/eval-harness
 - [x] Schritt 3a: `prompts/triage_v1.md` — von Vittorio aus der Spec abgeleitet,
       von Claude auf Kontamination geprüft. Befund: Beispiel-IDs in der Spec stammten
       aus Testfällen, wurden im Prompt durch neutrale ersetzt.
-- [~] Schritt 3b: Runner (`scripts/run_eval.py`) ← **hier**
-      **Stand:** Verbindung zu Ollama steht, fest verdrahteter Testaufruf funktioniert.
-      **Offen:** Prompt laden, Platzhalter `{{NACHRICHT}}` ersetzen, Schleife über
-      `data/dev.jsonl`, Antworten nach `runs/` schreiben, Parse-Fehler abfangen
-      statt abstürzen.
-      Modell: `qwen2.5:7b` über Ollama, lokal. `dolphin-mistral` liegt für einen
-      späteren Zweitvergleich bereit. Temperature 0 setzen.
-- [ ] Schritt 4: Grader + Metriken
+- [x] Schritt 3b: Runner (`scripts/run_eval.py`) — von Vittorio selbst geschrieben.
+      Lädt Prompt und Datensatz, ersetzt `{{NACHRICHT}}`, ruft `qwen2.5:7b` über
+      Ollama mit Temperature 0 auf, schreibt Rohantworten zeilenweise nach `runs/`.
+      Dateiname mit Zeitstempel, Modell und Prompt-Version.
+      **Erster Lauf am 16.08.2026: 32/32 Antworten, Parse-Rate 100 %** — alle
+      Antworten sauberes einzeiliges JSON ohne Fließtext oder Backticks.
+      `dolphin-mistral` liegt für einen späteren Zweitvergleich bereit.
+      Offen: `datei.flush()` und Fortschritts-`print` in der Schleife.
+      `TODO` für try/except bei Fern-APIs steht im Kopfkommentar.
+- [ ] Schritt 4: Grader + Metriken ← **hier**
+      Liest `runs/<lauf>.jsonl` und `data/dev.jsonl`, parst die Rohantworten,
+      vergleicht feldweise. Metriken siehe `spec/task_spec.md` Abschnitt 5:
+      Accuracy plus Confusion-Matrix für `category`, separates Recall für `urgent`,
+      `order_id` getrennt für Fälle mit und ohne ID. Parse-Rate mit ausweisen.
+      Bezug: Agreement-Obergrenze 94 / 84 / 100 % — Modellzahlen daran messen.
 - [ ] Schritt 5: Report + Fehleranalyse
 - [ ] Schritt 6: Test-Split anlegen
 - [ ] Schritt 7: Vergleich mit promptfoo / Inspect

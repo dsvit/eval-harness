@@ -10,6 +10,7 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
+tempCodeRunnerFile.py
 
 # --- Laufergebnisse ---
 # Rohantworten des Modells. Werden vom Runner erzeugt und sind reproduzierbar,
