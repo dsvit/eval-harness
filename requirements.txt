@@ -7,3 +7,4 @@
 #
 # Kommt mit dem Runner dazu:
 # anthropic==0.40.0
+ollama==0.30.10

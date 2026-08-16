@@ -1,83 +1,140 @@
 # Eval_Harness
 
-Ein Eval-Harness für LLM-Systeme, from scratch gebaut. Lernprojekt: das Ziel ist die
+Ein Eval-Harness für LLM-Systeme, from scratch gebaut. Lernprojekt: das Ziel ist, die
 Mechanik zu verstehen, nicht ein Framework zu bedienen.
 
-**System under Test:** ein Prompt, der Kundensupport-Nachrichten eines fiktiven
-Outdoor-Webshops in strukturiertes JSON überführt — `category` (5 Klassen),
-`priority` (3 Klassen), `order_id` (Extraktion mit Normalisierung). Drei Feldtypen,
-weil jeder einen anderen Grader und andere Metriken braucht.
+## System under Test
+
+Ein Prompt, der eingehende Kundensupport-Nachrichten eines fiktiven Outdoor-Webshops
+("Nordlicht") in strukturiertes JSON überführt:
+
+| Feld | Typ | Aufgabentyp |
+|---|---|---|
+| `category` | Enum, 5 Werte | Mehrklassen-Klassifikation |
+| `priority` | Enum, 3 Werte | Ordinale Klassifikation |
+| `order_id` | String oder `null` | Extraktion mit Normalisierung |
+
+Bewusst so gewählt: Die drei Feldtypen brauchen unterschiedliche Grader und unterschiedliche
+Metriken. Die verbindliche Aufgabendefinition steht in `spec/task_spec.md` — das ist die
+Quelle der Wahrheit für alle Labels.
+
+## Die vier Bausteine
+
+```
+Dataset  →  Runner  →  Grader  →  Report
+```
+
+**Dataset** — Eingaben, erwartete Ausgaben, Metadaten.
+**Runner** — schickt jeden Fall durch das SUT, speichert die Rohantworten.
+**Grader** — vergleicht Ist gegen Soll, feldweise.
+**Report** — aggregierte Metriken und Fehleranalyse.
+
+Die Reihenfolge ist nicht beliebig: Jeder Schritt lässt sich erst bauen, wenn man dem
+vorherigen trauen kann.
 
 ## Aufbau
 
 ```
-spec/task_spec.md      Aufgabendefinition und Labeling-Regeln. Quelle der Wahrheit.
-data/dev.jsonl         Datensatz: 32 Fälle, Input + erwarteter Output + Metadaten
-data/blind.jsonl       Unabhängige Zweitlabels, eingefroren. Basis des Agreement-Werts
+spec/task_spec.md              Aufgabendefinition und Labeling-Regeln, versioniert
+prompts/triage_v1.md           der Prompt = das System under Test
+data/dev.jsonl                 32 Fälle: Input + erwarteter Output + Metadaten
+data/blind.jsonl               unabhängige Zweitlabels, eingefroren
 data/dev_v1.0_snapshot.jsonl   Labelstand vor der Adjudikation
-scripts/               Validator, Vergleichsskript, später Runner und Grader
+scripts/                       Validator, Vergleichsskript, Runner
+runs/                          Rohantworten der Modellläufe (nicht versioniert)
 ```
+
+## Bisherige Ergebnisse
+
+**Inter-Annotator Agreement.** Bevor irgendein Modell gemessen wurde, haben zwei Menschen
+denselben Datensatz unabhängig gelabelt. Das Ergebnis ist die Obergrenze jeder späteren
+Messung:
+
+| Feld | Übereinstimmung | |
+|---|---|---|
+| `order_id` | 32 / 32 | Extraktionsregeln eindeutig |
+| `category` | 30 / 32 | gut |
+| `priority` | 27 / 32 | Schwachstelle |
+
+Praktische Folge: Ein Modellergebnis von 84 % bei `priority` wäre nicht interpretierbar —
+dort sind sich nicht einmal zwei Menschen einig. Bei `order_id` ist jede Abweichung ein
+echter Modellfehler.
+
+**Drei Spec-Defekte, gefunden durch das Zweitlabeling.** Sechs der sieben Abweichungen
+gingen auf Regelfehler zurück, nicht auf Unaufmerksamkeit:
+
+- Ein `urgent`-Kriterium verlangte Wissen, das aus der Nachricht nicht hervorging
+  ("betrifft alle Nutzer"). Ein Labeler hat nur den Text — solche Regeln erzeugen Rateverhalten.
+- Zwei Regeln standen korrekt in der Spec, wurden beim Labeln aber nicht gefunden. Eine Regel,
+  die niemand findet, ist so kaputt wie eine fehlende. Daraufhin wurde `priority` von Fließtext
+  auf einen Entscheidungsbaum umgestellt.
+- Die `low`-Definition hing an einem unscharfen Begriff und wurde durch eine abschließende
+  Liste ersetzt.
+
+Die vollständige Änderungshistorie mit Auslöser pro Regel steht am Ende von
+`spec/task_spec.md`.
+
+## Getroffene Entscheidungen
+
+| Entscheidung | Begründung |
+|---|---|
+| Python statt Java | Das LLM-Ökosystem ist Python; für Java gibt es keine Eval-Tooling-Landschaft |
+| From scratch statt promptfoo/Inspect | Lernziel ist die Mechanik. Frameworks später zum Vergleich |
+| JSONL statt CSV/JSON | Zeilenweise appendbar, git-diffbar, Standard im Eval-Umfeld |
+| Lokales Modell über Ollama | Kostenlos, unbegrenzt wiederholbar. Ein schwaches Modell erzeugt echte Fehler zum Analysieren |
+| Labels vorgeschlagen, nicht diktiert | Jedes Label wurde blind gegengelabelt. Uneinigkeit = Spec-Bug, nicht Label-Bug |
+| Blindlabels eingefroren | Nachträgliche Korrektur würde den Agreement-Wert wertlos machen |
+| Nur `dev`-Split zu Beginn | Ein Test-Split entsteht erst, wenn die Spec stabil ist — sonst ist er kontaminiert |
+
+## Kernprinzipien
+
+Entstanden aus Fehlern, nicht aus Lehrbüchern:
+
+**Erst Spec, dann Daten.** Ein Label ohne schriftliche Regel ist nicht reproduzierbar.
+Labeln zwei Menschen unterschiedlich, ist die Spec unterspezifiziert — nicht der Mensch schuld.
+
+**Jede Regel muss allein aus dem Input entscheidbar sein.** Regeln, die Wissen über die Welt
+verlangen, erzeugen Uneinigkeit, die wie Unaufmerksamkeit aussieht.
+
+**Bei Uneinigkeit erst die Spec ändern, dann das Label.** Nie umgekehrt. Jede Regeländerung
+wird mit ihrem Auslöser dokumentiert.
+
+**Ton ist keine Priorität.** Eine wütende Formulierung erhöht die Dringlichkeit nicht.
+
+**Schwere Fälle gehören rein.** 41 % der Fälle sind als `hard` markiert. Eine Baseline bei
+95 % wäre ein Warnsignal, kein Erfolg.
+
+**Vor jeder Label-Änderung committen.** Der Datensatz ist Code.
 
 ## Setup
 
-Python 3.10 oder neuer. Alles Weitere im Projektordner:
+Python 3.10 oder neuer, dazu [Ollama](https://ollama.com) mit einem lokalen Modell.
 
 ```bash
-python3 -m venv .venv          # virtuelle Umgebung anlegen (einmalig)
-source .venv/bin/activate      # aktivieren (in jeder neuen Terminal-Sitzung)
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+ollama pull qwen2.5:7b
 ```
-
-Eine **virtuelle Umgebung** ist Pythons Antwort auf ein Problem, das Java über Maven
-löst: `pip install` schreibt sonst systemweit, und zwei Projekte mit unterschiedlichen
-Versionsanforderungen zerstören sich gegenseitig. `.venv/` ist ein projektlokaler
-Python samt eigener Paketablage und steht in `.gitignore` — man committet die Umgebung
-nicht, sondern `requirements.txt`, aus der sie sich rekonstruieren lässt.
-
-Aktiv erkennt man sie am `(.venv)` vor dem Prompt. `deactivate` beendet sie.
 
 ## Ausführen
 
 ```bash
 python3 scripts/validate_dataset.py data/dev.jsonl
-python3 scripts/compare_labels.py data/dev_v1.0_snapshot.jsonl data/blind.jsonl
+python3 scripts/compare_labels.py
 ```
 
 Der Validator prüft Schema, erlaubte Labelwerte, ID-Format und Duplikate und gibt die
 Klassenverteilung aus. Vor jeder Änderung am Datensatz laufen lassen.
 
-## Arbeitsregeln
-
-Diese Regeln sind aus Fehlern entstanden, nicht aus Prinzipien:
-
-**Erst Spec, dann Daten.** Ein Label ohne schriftliche Regel ist nicht reproduzierbar.
-
-**Jede Regel muss allein aus dem Input entscheidbar sein.** Eine Regel, die Wissen über
-die Welt verlangt ("betrifft alle Nutzer"), erzeugt Uneinigkeit, die wie Unaufmerksamkeit
-aussieht, aber ein Spec-Fehler ist.
-
-**Bei Uneinigkeit erst die Spec ändern, dann das Label.** Nie umgekehrt. Jede
-Regeländerung wird in der Änderungshistorie der Spec mit ihrem Auslöser festgehalten.
-
-**Blindlabels bleiben eingefroren.** `data/blind.jsonl` wird nach der Adjudikation nicht
-korrigiert — sonst misst der Agreement-Wert nur noch, wie oft man sich hinterher geeinigt
-hat. Deshalb existiert `dev_v1.0_snapshot.jsonl`: der Vergleich läuft gegen den Stand vor
-der Diskussion.
-
-**Vor jeder Label-Änderung committen.** Der Datensatz ist Code.
-
-**Schwere Fälle gehören rein.** Ein Datensatz aus einfachen Fällen misst nichts. 41 % der
-Fälle sind als `hard` markiert; eine Baseline bei 95 % wäre ein Warnsignal, kein Erfolg.
-
 ## Stand
 
-- [x] Aufgabe und Erfolgskriterium (`spec/task_spec.md`, Version 1.1)
+- [x] Aufgabendefinition und Labeling-Regeln (`spec/task_spec.md`, Version 1.1)
 - [x] Dev-Datensatz, 32 Fälle, mit Schema-Validator
-- [x] Blind-Review: 32 unabhängige Zweitlabels, 7 Abweichungen, daraus 3 Spec-Defekte
-      behoben und 4 Labels adjudiziert
-- [ ] `scripts/compare_labels.py` (Aufgabe: `scripts/AUFGABE_compare_labels.md`)
-- [ ] Runner — führt das SUT über alle Fälle aus, cached Ergebnisse
-- [ ] Grader — feldweiser Vergleich Ist gegen Soll
-- [ ] Report — aggregierte Metriken und Fehleranalyse
-- [ ] Test-Split, sobald die Spec stabil ist
+- [x] Blind-Review, Agreement gemessen, 3 Spec-Defekte behoben
+- [x] Prompt v1 (`prompts/triage_v1.md`)
+- [~] Runner — Verbindung zum Modell steht, Schleife über den Datensatz fehlt
+- [ ] Grader — feldweiser Vergleich Modell gegen Gold
+- [ ] Report — Metriken und Fehleranalyse
+- [ ] Test-Split
 - [ ] Vergleich mit promptfoo / Inspect
