@@ -14,16 +14,17 @@ lines = text.splitlines()
 
 vittorio = {} # Das bildet das Dict ab in dem die einzelnen Fälle gespeichert werden.
 
-# Jede Zeile in ein Dict umwandeln und unter ihrer id ablegen,damit beide Dateien später über die id verglichen werden können.
+# Jede Zeile in ein Dict umwandeln und unter ihrer id ablegen, damit beide Dateien
+# später über die id verglichen werden können.
 for zeile in lines:
     fall = json.loads(zeile)
     vittorio[fall["id"]] = fall
 
 
-# --- Das ganze haben wir nun mit blind.jsonl gemacht und nun tun wir das mit dev_v1.
-# 0_snapshot.jsonl -> Also der Datei die Claude bewertet hat um zu schauen, dass die 
-# Bewertung zuverlässig klappt. Ein wesentlicher Unterschied: Das Labelfeld heißt in 
-# dieser Datei nicht "label" wie bei der blind-Datei sondern "exptected" ---
+# --- Das ganze haben wir nun mit blind.jsonl gemacht und nun tun wir das mit
+# dev_v1.0_snapshot.jsonl -> Also der Datei die Claude bewertet hat um zu schauen,
+# dass die Bewertung zuverlässig klappt. Ein wesentlicher Unterschied: Das Labelfeld
+# heißt in dieser Datei nicht "label" wie bei der blind-Datei sondern "exptected" ---
 
 text = open("data/dev_v1.0_snapshot.jsonl", encoding = "utf-8").read()
 lines = text.splitlines()
