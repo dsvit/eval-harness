@@ -25,10 +25,13 @@ from pathlib import Path        # oben zu den anderen imports
 
 
 
-# --- Hier laden wir den Prompt für das LLM in das Skript rein --- 
+# --- Hier laden wir den Prompt für das LLM in das Skript 
+# rein --- 
 vorlage = open("prompts/triage_v1.md", encoding = "utf-8").read()
 
-# --- In diesem Abschnitt extrahieren wir wie in compare_labels.py die einzelnen Fälle um Sie dem LLM gemeinsam mit dem Prompt zu geben ---
+# --- In diesem Abschnitt extrahieren wir wie in 
+# compare_labels.py die einzelnen Fälle um Sie dem LLM 
+# gemeinsam mit dem Prompt zu geben ---
 text = open("data/dev.jsonl", encoding = "utf-8").read()
 lines = text.splitlines()
 
@@ -39,13 +42,19 @@ for zeile in lines:
     prompt = vorlage.replace("{{NACHRICHT}}", fall["input"])
     prompts[fall["id"]] = prompt # fall["id"] als Schlüssel für das dict, prompt als Wert
 
-# --- Jetzt konfigurieren wir erstmal das LLM und geben es alles was es braucht und speichern die Antworten des LLMs einer neu generierten Datei mit Zeitstempel der Generierung ---
+# --- Jetzt konfigurieren wir erstmal das LLM und geben es 
+# alles was es braucht und speichern die Antworten des LLMs einer neu generierten Datei mit Zeitstempel 
+# der Generierung ---
 
 # Das hier brauchen wir nur um der Datei immer den Namen des aktuellen Testlaufes zu geben
 stempel = datetime.now().strftime("%Y-%m-%d_%H-%M")
 ausgabe = f"runs/{stempel}_qwen2.5-7b_v1.jsonl"
  
- # for x, y in z.item() heißt dass x der Schlüssel ist und y der Wert der von item() extrahiert wird. Die Antworten übertragen wir dann direkt ein eine Datei und zu aller erst erstellen wir natürlich den run Ordner indem die Testläufe dann gespeichert werden. Den Ordner automatisiert erstellen zu lassen hat den Grund, damit das Skript auch von anderen genutzt werden kann, ohne dass ich zuvor erkläre dass ein run Ornder angelegt werden muss.
+ # for x, y in z.item() heißt dass x der Schlüssel ist und y der Wert der von item() extrahiert wird. 
+ # Die Antworten übertragen wir dann direkt ein eine Datei und zu aller erst erstellen wir natürlich den run Ordner indem die 
+ # Testläufe dann gespeichert werden. Den Ordner automatisiert erstellen zu 
+ # lassen hat den Grund, damit das Skript auch von anderen genutzt werden kann, ohne dass ich zuvor erkläre dass ein run Ornder 
+ # angelegt werden muss.
 Path("runs").mkdir(exist_ok=True)
  
 with open(ausgabe, "w", encoding = "utf-8") as datei:
