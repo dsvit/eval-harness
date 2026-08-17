@@ -32,15 +32,40 @@ Repo: github.com/dsvit/eval-harness
       `dolphin-mistral` liegt für einen späteren Zweitvergleich bereit.
       Offen: `datei.flush()` und Fortschritts-`print` in der Schleife.
       `TODO` für try/except bei Fern-APIs steht im Kopfkommentar.
-- [ ] Schritt 4: Grader + Metriken ← **hier**
-      Liest `runs/<lauf>.jsonl` und `data/dev.jsonl`, parst die Rohantworten,
-      vergleicht feldweise. Metriken siehe `spec/task_spec.md` Abschnitt 5:
-      Accuracy plus Confusion-Matrix für `category`, separates Recall für `urgent`,
-      `order_id` getrennt für Fälle mit und ohne ID. Parse-Rate mit ausweisen.
-      Bezug: Agreement-Obergrenze 94 / 84 / 100 % — Modellzahlen daran messen.
-- [ ] Schritt 5: Report + Fehleranalyse
+- [x] Schritt 4: Grader (`scripts/grade.py`) — von Vittorio selbst geschrieben.
+      Joint `runs/<lauf>.jsonl` gegen `data/dev.jsonl` über die id, zählt feldweise
+      Treffer, gibt Prozente aus und listet jede Abweichung mit id, Soll und Ist.
+      Zwei `json.loads` pro Run-Zeile, weil der Runner die Antwort als Text ablegt.
+      **Erstes Ergebnis, qwen2.5:7b, triage_v1:** category 87,5 % · priority 62,5 %
+      · order_id 100 %. Agreement-Obergrenze: 93,8 / 84,4 / 100 %.
+      **Offen:** `order_id` nach Fällen mit und ohne ID trennen (100 % täuscht,
+      17 von 32 sind `null`), Confusion-Matrix für `category`, Parse-Rate ausweisen,
+      die drei fast gleichen Vergleichsblöcke in eine Funktion ziehen.
+- [ ] Schritt 5: Report + Fehleranalyse ← **hier**
 - [ ] Schritt 6: Test-Split anlegen
 - [ ] Schritt 7: Vergleich mit promptfoo / Inspect
+
+## Befund aus Lauf 1 (17.08.2026) — noch Hypothese
+
+`priority` liegt mit 62,5 % **unter der Majority-Class-Baseline** (immer `normal`
+= 65,6 %). Das Feld hat in diesem Zustand negativen Wert. `category` liegt mit
+87,5 % nahe der Obergrenze, dort ist kein Handlungsbedarf.
+
+Richtung der 12 Fehler: 10 zu hoch, 2 zu niedrig. Sechs der sieben Hochstufungen
+auf `urgent` sind Fälle, die der Prompt **wörtlich als Ausschluss benennt**
+(Tonfall 007, Ausfallmeldung 014, Zugangsprobleme 006/022, ausbleibendes Geld 025,
+DSGVO 032). Umgekehrt sind 015/016/029 wörtlich Punkte der `low`-Liste und
+010/020 wörtlich Schritt 2 — trotzdem falsch.
+
+Vermutung: Das Modell arbeitet den Entscheidungsbaum nicht ab, sondern schätzt nach
+Tonfall und gefühlter Schwere. Dazu die bekannte Schwäche verneinter Anweisungen.
+
+Prüfen durch: (a) `triage_v2.md` mit positiven statt verneinten Regeln, gleicher
+Datensatz; (b) `dolphin-mistral` mit gleichem Prompt. Bleibt der Bias bei (b),
+liegt es nicht am Prompt.
+
+**Achtung Überanpassung:** nicht den Prompt gegen diese 32 Fälle drehen, bis die
+Zahl stimmt. Dafür ist der Test-Split da (Schritt 6).
 
 ## Offene Fragen (nicht vergessen)
 
