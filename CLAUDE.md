@@ -67,6 +67,44 @@ liegt es nicht am Prompt.
 **Achtung Überanpassung:** nicht den Prompt gegen diese 32 Fälle drehen, bis die
 Zahl stimmt. Dafür ist der Test-Split da (Schritt 6).
 
+## Lauf 2 (18.08.2026) — dolphin-mistral, Parse-Rate 0/32
+
+Gedacht als Gegenprobe zum `priority`-Bias: gleicher Prompt (`triage_v1`), gleicher
+Datensatz, anderes Modell. Nicht auswertbar — aus einem lehrreichen Grund.
+
+`dolphin-mistral:latest` liefert in **32 von 32 Fällen Python-Code statt einer
+Klassifikation**: eine Funktion `classify_support_ticket(message)` mit `if/elif`-Ketten
+über meine Kategorien, eingerahmt in Backticks. Parsbares JSON: 0.
+
+Zwei Zahlen, die den Befund schärfen:
+
+- Antwortlänge 1.593 Zeichen im Schnitt gegen 66 bei qwen — das 24-fache. Daher die
+  Laufzeit von rund 30 Minuten für 32 Fälle; Generierungszeit hängt an der Tokenmenge.
+- Nur 23 verschiedene Antworten bei 32 verschiedenen Nachrichten, eine kam viermal
+  identisch vor. Bei Temperature 0 ist Wiederholung nur bei gleicher Eingabe erwartbar.
+  Heißt: Die Kundennachricht beeinflusst die Ausgabe nicht. Das Modell beantwortet den
+  Prompt, nicht den Fall.
+
+**Deutung: kein Prompt-Defekt.** `triage_v1` verbietet Backticks, Fließtext und
+Erklärungen wörtlich und zeigt ein Beispiel einer gültigen Antwort. Wer das ignoriert,
+kann Instruction Following nicht gut genug — das ist Fähigkeit, nicht Spezifikation.
+Vermutung zur Ursache: Der Prompt sieht mit Tabellen, Enum-Werten und nummeriertem
+Entscheidungsbaum aus wie ein Anforderungsdokument. Ein schwaches Modell setzt darauf
+mit einer Implementierung fort statt mit einer Anwendung.
+
+Konsequenzen:
+
+- `dolphin-mistral` ist als Kandidat ausgeschlossen. Auch das ist ein Eval-Ergebnis —
+  Kandidaten auszuschließen ist ein Zweck von Evals, nicht ein Fehlschlag.
+- **Die Gegenprobe zum `priority`-Bias bleibt offen.** Ob der Aufwärtsbias am Prompt
+  oder am Modell liegt, ist ungeklärt.
+- **Parse-Rate ist keine Nebenmetrik.** Ein Report, der nur Accuracy zeigt, hätte hier
+  gar nichts angezeigt. `grade.py` bricht an der ersten Zeile ab, weil das `json.loads`
+  in Zeile 33 ungeschützt ist — der Fehlerpfad, der bei qwen nie lief.
+
+Rohdaten: `runs/2026-08-18_18-28_dolphin-mistral_v1.jsonl`, nicht versioniert
+(`runs/` steht in `.gitignore`).
+
 ## Offene Fragen (nicht vergessen)
 
 - **Prompt Injection vs. Spec-Abschnitt 0.** Vittorio (14.08.2026): Öffnet die Regel
