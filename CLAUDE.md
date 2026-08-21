@@ -39,8 +39,21 @@ Repo: github.com/dsvit/eval-harness
       **Erstes Ergebnis, qwen2.5:7b, triage_v1:** category 87,5 % · priority 62,5 %
       · order_id 100 %. Agreement-Obergrenze: 93,8 / 84,4 / 100 %.
       **Offen:** `order_id` nach Fällen mit und ohne ID trennen (100 % täuscht,
-      17 von 32 sind `null`), Confusion-Matrix für `category`, Parse-Rate ausweisen,
-      die drei fast gleichen Vergleichsblöcke in eine Funktion ziehen.
+      17 von 32 sind `null`), Confusion-Matrix für `category`, die drei fast
+      gleichen Vergleichsblöcke in eine Funktion ziehen, den Dateinamen aus
+      Zeile 11 auf die Kommandozeile holen.
+- [x] Schritt 4b: Grader robust, Parse-Rate und conditional accuracy (20.08.2026) —
+      von Vittorio selbst geschrieben. Das `json.loads` der Modellantwort steht in
+      `try/except`; nicht parsbare IDs landen in `nicht_parsbar`, die Grading-Schleife
+      überspringt sie über `if fall_id not in modell: continue`.
+      Ausgabe in drei Blöcken: Parse-Rate mit den gescheiterten IDs, Accuracy über
+      alle Fälle, Accuracy nur über die parsbaren. Der Conditional-Block ist gegen
+      Division durch 0 abgesichert — bei Parse-Rate 0 steht dort eine Erklärung
+      statt einer Zahl, weil 0 % behaupten würde, das Modell habe geantwortet und
+      danebengelegen.
+      Gegen alle drei Zustände getestet: qwen 32/32, `runs/kaputt_test.jsonl` 27/32
+      (künstlich beschädigte Kopie des qwen-Laufs, nicht versioniert), dolphin 0/32.
+      qwen-Zahlen unverändert — keine Regression.
 - [ ] Schritt 5: Report + Fehleranalyse ← **hier**
 - [ ] Schritt 6: Test-Split anlegen
 - [ ] Schritt 7: Vergleich mit promptfoo / Inspect
@@ -99,8 +112,12 @@ Konsequenzen:
 - **Die Gegenprobe zum `priority`-Bias bleibt offen.** Ob der Aufwärtsbias am Prompt
   oder am Modell liegt, ist ungeklärt.
 - **Parse-Rate ist keine Nebenmetrik.** Ein Report, der nur Accuracy zeigt, hätte hier
-  gar nichts angezeigt. `grade.py` bricht an der ersten Zeile ab, weil das `json.loads`
-  in Zeile 33 ungeschützt ist — der Fehlerpfad, der bei qwen nie lief.
+  gar nichts angezeigt. `grade.py` brach an der ersten Zeile ab, weil das `json.loads`
+  in Zeile 33 ungeschützt war — der Fehlerpfad, der bei qwen nie lief.
+  **Behoben am 20.08.2026, Schritt 4b.** Der Lauf ist jetzt auswertbar, und das
+  Ergebnis ist eine Zahl statt eines Stacktrace: Parse-Rate 0/32 = 0 %, Accuracy über
+  alle Fälle 0 %, conditional accuracy nicht berechenbar. Genau diese Kombination *ist*
+  der Befund — nicht "schlecht klassifiziert", sondern "nie geantwortet".
 
 Rohdaten: `runs/2026-08-18_18-28_dolphin-mistral_v1.jsonl`, nicht versioniert
 (`runs/` steht in `.gitignore`).
@@ -133,11 +150,25 @@ ungefragt mitgeliefert hat.
 Konsequenz: Vor dem Schreiben von Code fragen, ob er gebraucht wird und wer ihn schreibt.
 Schreibt Claude, danach gemeinsam durchgehen — Zeile für Zeile, inklusive *wozu* das
 Konstrukt gut ist und *warum* man so etwas überhaupt braucht. Nicht nur erklären, was der
-Code tut.
+Code tut. Testdaten in einem gitignorierten Ordner (`runs/`) darf Claude auf Zuruf selbst
+anlegen — das ist kein Code im Projekt.
 
-**Nicht in zu kleine Stufen zerlegen.** Vittorio (16.08.2026): Wenn er einen Ablauf schon
-verstanden hat, bremst die Zerlegung in Mikroschritte mehr als sie hilft. Stufen nur dort,
-wo tatsächlich neue Konzepte auftauchen.
+**Erklären an Code, den Vittorio selbst laufen lässt.** Vittorio (20.08.2026), zweimal im
+selben Gespräch: erst *"vlt musst du es mit code und outputs erklären und viel
+kleinschrittiger"*, dann *"wieso testest du die Dinge für meinen Code, die ich testen
+sollte? So sehe ich das alles doch selber gar nicht."* Konzepterklärungen in Fließtext
+laufen ins Leere — und vorgeführte Demo-Ausgaben aus Claudes Terminal genauso, denn auch
+die bleiben Text zum Lesen.
+
+Konsequenz: Claude sagt, welcher Befehl zu tippen ist und worauf in der Ausgabe zu achten
+ist; Vittorio führt aus und berichtet. Danach gezielt nachfragen ("welche Zeilennummer
+steht jetzt im Traceback?") statt die Antwort vorwegzunehmen. Vorher/Nachher an *seinem*
+Rechner ist die Erklärung. Ein Thema pro Antwort.
+
+**Nicht in zu kleine Stufen zerlegen — aber nur bei Bekanntem.** Vittorio (16.08.2026):
+Wenn er einen Ablauf schon verstanden hat, bremst die Zerlegung in Mikroschritte mehr als
+sie hilft. Gilt weiterhin für vertraute Abläufe. Bei neuen Konzepten gilt das Gegenteil,
+siehe oben.
 
 **Offen:** `scripts/validate_dataset.py` gemeinsam durchgehen. Alternativ von Vittorio
 neu schreiben lassen oder löschen — seine Entscheidung.

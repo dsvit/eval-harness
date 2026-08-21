@@ -40,7 +40,7 @@ prompts/triage_v1.md           der Prompt = das System under Test
 data/dev.jsonl                 32 Fälle: Input + erwarteter Output + Metadaten
 data/blind.jsonl               unabhängige Zweitlabels, eingefroren
 data/dev_v1.0_snapshot.jsonl   Labelstand vor der Adjudikation
-scripts/                       Validator, Vergleichsskript, Runner
+scripts/                       Validator, Vergleichsskript, Runner, Grader
 runs/                          Rohantworten der Modellläufe (nicht versioniert)
 ```
 
@@ -85,6 +85,10 @@ Die vollständige Änderungshistorie mit Auslöser pro Regel steht am Ende von
 | Labels vorgeschlagen, nicht diktiert | Jedes Label wurde blind gegengelabelt. Uneinigkeit = Spec-Bug, nicht Label-Bug |
 | Blindlabels eingefroren | Nachträgliche Korrektur würde den Agreement-Wert wertlos machen |
 | Nur `dev`-Split zu Beginn | Ein Test-Split entsteht erst, wenn die Spec stabil ist — sonst ist er kontaminiert |
+| Parse-Rate als eigene Metrik, nicht als Fehlerbehandlung | Ein Modell ohne gültiges JSON ist nicht ungenau, sondern unbrauchbar. Accuracy allein verdeckt den Unterschied — Lauf 2 hätte gar nichts angezeigt |
+| Accuracy über die parsbaren Antworten, nie ohne die Parse-Rate daneben | Trennt "falsch klassifiziert" von "gar nicht geantwortet". Allein wäre die Zahl zu optimistisch: Sie misst nur die Fälle, die das Modell selbst ausgewählt hat |
+| Bei Parse-Rate 0 keine Zahl, sondern eine Erklärung | `0 %` würde behaupten, das Modell habe geantwortet und danebengelegen. Es hat nie geantwortet — das ist ein anderer Zustand |
+| Keine Reparatur der Rohantwort (vorerst) | Backticks wegzuschneiden hebt die Parse-Rate, ohne dass das Modell besser wird. Erst roh messen; Reparatur später als bewusste, dokumentierte Stufe |
 
 ## Kernprinzipien
 
@@ -133,8 +137,10 @@ Klassenverteilung aus. Vor jeder Änderung am Datensatz laufen lassen.
 - [x] Dev-Datensatz, 32 Fälle, mit Schema-Validator
 - [x] Blind-Review, Agreement gemessen, 3 Spec-Defekte behoben
 - [x] Prompt v1 (`prompts/triage_v1.md`)
-- [~] Runner — Verbindung zum Modell steht, Schleife über den Datensatz fehlt
-- [ ] Grader — feldweiser Vergleich Modell gegen Gold
+- [x] Runner (`scripts/run_eval.py`) — Ollama-Anbindung, Schleife über den Datensatz,
+      Rohantworten nach `runs/`
+- [x] Grader (`scripts/grade.py`) — feldweiser Vergleich Modell gegen Gold, dazu
+      Parse-Rate, Accuracy über alle Fälle und Accuracy nur über die parsbaren
 - [ ] Report — Metriken und Fehleranalyse
 - [ ] Test-Split
 - [ ] Vergleich mit promptfoo / Inspect
