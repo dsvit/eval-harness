@@ -19,6 +19,8 @@ gold = {} # aus text_dev
 
 modell = {} # aus modell_run
 
+nicht_parsbar = [] # Liste mit den ID's der Einträge die nicht parsbar waren
+
 for zeile in lines_dev:
     fall = json.loads(zeile)
     gold[fall["id"]] = fall
@@ -30,8 +32,11 @@ for zeile in lines_dev:
 # Die id steht nur aussen in eintrag -- das Modell liefert keine mit.
 for zeile in lines_modell:
     eintrag = json.loads(zeile)
-    fall = json.loads(eintrag["antwort"])
-    modell[eintrag["id"]] = fall
+    try:
+        fall = json.loads(eintrag["antwort"])
+        modell[eintrag["id"]] = fall
+    except json.JSONDecodeError:
+        nicht_parsbar.append(eintrag["id"])
     
 # --- Jetzt graden wir den Output des LLM's ---
 treffer_labels = 0
@@ -39,6 +44,9 @@ treffer_priority = 0
 treffer_order_id = 0
 
 for fall_id in gold:
+    if fall_id not in modell:
+        continue
+    
     if(modell[fall_id]["category"] == gold[fall_id]["expected"]["category"]):
         treffer_labels +=1
     else:
@@ -56,7 +64,24 @@ for fall_id in gold:
               
 # Ausgabe des Ergebnis
 gesamt = len(gold)
+geparsed = len(modell)
 
+print("========== PARSE-RATE ==========")
+print(f"Parse-Rate: {geparsed}/{gesamt} = {geparsed / gesamt * 100:.1f}%")
+
+print(f"nicht parsbar: {nicht_parsbar}")
+
+print("========== GESAMT-ACCURACY ==========")
 print(f"category:  {treffer_labels}/{gesamt}  =  {treffer_labels / gesamt * 100:.1f} %")
 print(f"priority:  {treffer_priority}/{gesamt}  =  {treffer_priority / gesamt * 100:.1f} %")
 print(f"order_id:  {treffer_order_id}/{gesamt}  =  {treffer_order_id / gesamt * 100:.1f} %")
+
+# Wenn die Parse-Rate = 0% ist können wir die if-Verzweigung nicht ausführen, da man nicht durch 0 teilen kann
+if geparsed != 0:
+    print("========== CONDITIONAL-ACCURACY ==========")
+    print(f"category:  {treffer_labels}/{geparsed}  =  {treffer_labels / geparsed * 100:.1f} %")
+    print(f"priority:  {treffer_priority}/{geparsed}  =  {treffer_priority / geparsed * 100:.1f} %")
+    print(f"order_id:  {treffer_order_id}/{geparsed}  =  {treffer_order_id / geparsed * 100:.1f} %")
+else:
+    print("Conditional-Accuracy kann nicht berechnet werden, da Parse-Rate = 0% und man nicht treffer/0 rechnen kann.")
+    
