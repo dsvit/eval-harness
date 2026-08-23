@@ -37,30 +37,51 @@ for zeile in lines_modell:
         modell[eintrag["id"]] = fall
     except json.JSONDecodeError:
         nicht_parsbar.append(eintrag["id"])
+        
+# --- Gruppengrößen für order_id ---
+# Ein Fall gehört zur Gruppe "ohne Nummer", wenn im Gold order_id = None steht.
+# Nicht 17 und 15 fest reinschreiben - beim Test-Split sind es andere Zahlen.
+anzahl_ohne_nummer = 0
+anzahl_mit_nummer = 0
+
+for fall_id in gold:
+    if gold[fall_id]["expected"]["order_id"] is None:
+        anzahl_ohne_nummer += 1
+    else:
+        anzahl_mit_nummer += 1
     
 # --- Jetzt graden wir den Output des LLM's ---
 treffer_labels = 0
 treffer_priority = 0
 treffer_order_id = 0
+treffer_order_id_null = 0
+geparsed_ohne_nummer = 0
+geparsed_mit_nummer = 0
 
 for fall_id in gold:
     if fall_id not in modell:
         continue
-    
+    # Hier graden wir 'category'
     if(modell[fall_id]["category"] == gold[fall_id]["expected"]["category"]):
         treffer_labels +=1
     else:
         print(f'ID: {fall_id} | modell-category: {modell[fall_id]["category"]} vs gold-category: {gold[fall_id]["expected"]["category"]}')
-        
+    
+    # Hier graden wir 'priority'
     if(modell[fall_id]["priority"] == gold[fall_id]["expected"]["priority"]):
         treffer_priority +=1
     else:
         print(f'ID: {fall_id} | modell-priority: {modell[fall_id]["priority"]} vs gold-priority: {gold[fall_id]["expected"]["priority"]}')
-            
-    if(modell[fall_id]["order_id"] == gold[fall_id]["expected"]["order_id"]):
-        treffer_order_id +=1
+    
+    # Hier graden wir 'order_id'
+    if gold[fall_id]["expected"]["order_id"] is None:
+        geparsed_ohne_nummer += 1
+        if modell[fall_id]["order_id"] == gold[fall_id]["expected"]["order_id"]:
+            treffer_order_id_null += 1
     else:
-        print(f'ID: {fall_id} | modell-order_id: {modell[fall_id]["order_id"]} vs gold-order_id: {gold[fall_id]["expected"]["order_id"]}')
+        geparsed_mit_nummer += 1
+        if modell[fall_id]["order_id"] == gold[fall_id]["expected"]["order_id"]:
+            treffer_order_id += 1
               
 # Ausgabe des Ergebnis
 gesamt = len(gold)
@@ -74,14 +95,16 @@ print(f"nicht parsbar: {nicht_parsbar}")
 print("========== GESAMT-ACCURACY ==========")
 print(f"category:  {treffer_labels}/{gesamt}  =  {treffer_labels / gesamt * 100:.1f} %")
 print(f"priority:  {treffer_priority}/{gesamt}  =  {treffer_priority / gesamt * 100:.1f} %")
-print(f"order_id:  {treffer_order_id}/{gesamt}  =  {treffer_order_id / gesamt * 100:.1f} %")
+print(f"order_id ohne Nummer:  {treffer_order_id_null}/{anzahl_ohne_nummer}  =  {treffer_order_id_null / anzahl_ohne_nummer * 100:.1f} %")
+print(f"order_id mit Nummer:   {treffer_order_id}/{anzahl_mit_nummer}  =  {treffer_order_id / anzahl_mit_nummer * 100:.1f} %")
 
 # Wenn die Parse-Rate = 0% ist können wir die if-Verzweigung nicht ausführen, da man nicht durch 0 teilen kann
 if geparsed != 0:
     print("========== CONDITIONAL-ACCURACY ==========")
     print(f"category:  {treffer_labels}/{geparsed}  =  {treffer_labels / geparsed * 100:.1f} %")
     print(f"priority:  {treffer_priority}/{geparsed}  =  {treffer_priority / geparsed * 100:.1f} %")
-    print(f"order_id:  {treffer_order_id}/{geparsed}  =  {treffer_order_id / geparsed * 100:.1f} %")
+    print(f"order_id ohne Nummer:  {treffer_order_id_null}/{geparsed_ohne_nummer}  =  {treffer_order_id_null / geparsed_ohne_nummer * 100:.1f} %")
+    print(f"order_id mit Nummer:   {treffer_order_id}/{geparsed_mit_nummer}  =  {treffer_order_id / geparsed_mit_nummer * 100:.1f} %")
 else:
     print("Conditional-Accuracy kann nicht berechnet werden, da Parse-Rate = 0% und man nicht treffer/0 rechnen kann.")
     
